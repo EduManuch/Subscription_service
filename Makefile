@@ -44,7 +44,13 @@ shellp: ## shell в контейнер postgres
 	docker exec -it postgres /bin/sh
 
 psql: ## psql в postgres
-	PGPASSWORD='postgres' psql -U postgres -h localhost
+	PGPASSWORD='password' psql -U postgres -h localhost -d sub_db
+
+migrateup:
+	migrate -path migrations -database "postgres://postgres:password@localhost:5432/sub_db?sslmode=disable" -verbose up
+
+migratedown:
+	migrate -path migrations -database "postgres://postgres:password@localhost:5432/sub_db?sslmode=disable" -verbose down
 
 
 # ---- GO LOCAL ----
