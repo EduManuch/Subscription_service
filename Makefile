@@ -61,4 +61,4 @@ fmt: ## форматировать код
 	go fmt ./...
 
 run: ## запустить локально без Docker
-	go run cmd/server/main.go
+	go run cmd/app/main.go
