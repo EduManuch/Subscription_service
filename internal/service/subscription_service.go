@@ -71,3 +71,17 @@ func (s *SubscriptionService) Create(ctx context.Context, input CreationSubscrip
 
 	return mSubscription, nil
 }
+
+func (s *SubscriptionService) GetByID(ctx context.Context, id string) (*model.Subscription, error) {
+	parsedID, err := uuid.Parse(id)
+
+	if err != nil {
+		return nil, fmt.Errorf("invalid subscription id")
+	}
+
+	sub, err := s.repo.GetByID(ctx, parsedID)
+	if err != nil {
+		return nil, err
+	}
+	return sub, nil
+}

@@ -15,7 +15,11 @@ Content-Type: application/json
   "price": 400,
   "user_id": "60601fee-2bf1-4721-ae6f-7636e79a0cba",
   "start_date": "07-2025",
-  "end_date": "06-2025"
+  "end_date": "08-2025"
 }
+###
 
+###
+# curl http://localhost:8080/subscriptions/
+GET http://localhost:8080/subscriptions/5383e26e-6515-42be-b6df-519b0c6741f7
 ###

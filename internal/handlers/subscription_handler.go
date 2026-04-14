@@ -28,26 +28,59 @@ func (h *SubscriptionHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	subscription, err := h.service.Create(r.Context(), input)
+	sub, err := h.service.Create(r.Context(), input)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	response := map[string]any{
-		"id":           subscription.ID,
-		"service_name": subscription.ServiceName,
-		"price":        subscription.Price,
-		"user_id":      subscription.UserID,
-		"start_date":   subscription.StartDate.Format("01-2006"),
-		"created_at":   subscription.CreatedAt,
-		"updated_at":   subscription.UpdatedAt,
+		"id":           sub.ID,
+		"service_name": sub.ServiceName,
+		"price":        sub.Price,
+		"user_id":      sub.UserID,
+		"start_date":   sub.StartDate.Format("01-2006"),
+		"created_at":   sub.CreatedAt,
+		"updated_at":   sub.UpdatedAt,
 	}
 
-	if subscription.EndDate != nil {
-		response["end_date"] = subscription.EndDate.Format("01-2006")
+	if sub.EndDate != nil {
+		response["end_date"] = sub.EndDate.Format("01-2006")
 	}
 
 	w.WriteHeader(http.StatusCreated)
+	_ = json.NewEncoder(w).Encode(response)
+}
+
+func (h *SubscriptionHandler) GetByID(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	id := r.PathValue("id")
+
+	sub, err := h.service.GetByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	response := map[string]any{
+		"id":           sub.ID,
+		"service_name": sub.ServiceName,
+		"price":        sub.Price,
+		"user_id":      sub.UserID,
+		"start_date":   sub.StartDate.Format("01-2006"),
+		"created_at":   sub.CreatedAt,
+		"updated_at":   sub.UpdatedAt,
+	}
+
+	if sub.EndDate != nil {
+		response["end_date"] = sub.EndDate.Format("01-2006")
+	}
+
 	_ = json.NewEncoder(w).Encode(response)
 }
