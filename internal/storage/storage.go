@@ -32,6 +32,6 @@ func NewPostgres(cfg *config.Config) (*pgxpool.Pool, error) {
 		return nil, err
 	}
 
-	log.Println("Connected to PotgreSQL")
+	log.Println("Connected to PostgreSQL")
 	return dbPool, nil
 }
