@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sub_service/internal/model"
 	"sub_service/internal/repository"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 type SubscriptionService struct {
@@ -25,6 +27,11 @@ type CreationSubscriptionInput struct {
 	StartDate   string  `json:"start_date"`
 	EndDate     *string `json:"end_date,omitempty"`
 }
+
+var (
+	ErrSubNotFound  = errors.New("subscription not found")
+	ErrInvalidSubID = errors.New("invalid subscription id")
+)
 
 func (s *SubscriptionService) Create(ctx context.Context, input CreationSubscriptionInput) (*model.Subscription, error) {
 	if input.ServiceName == "" {
@@ -76,11 +83,14 @@ func (s *SubscriptionService) GetByID(ctx context.Context, id string) (*model.Su
 	parsedID, err := uuid.Parse(id)
 
 	if err != nil {
-		return nil, fmt.Errorf("invalid subscription id")
+		return nil, ErrInvalidSubID
 	}
 
 	sub, err := s.repo.GetByID(ctx, parsedID)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrSubNotFound
+		}
 		return nil, err
 	}
 	return sub, nil

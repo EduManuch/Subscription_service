@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	serv "sub_service/internal/service"
 )
@@ -64,7 +65,14 @@ func (h *SubscriptionHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 
 	sub, err := h.service.GetByID(r.Context(), id)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		switch {
+		case errors.Is(err, serv.ErrSubNotFound):
+			http.Error(w, err.Error(), http.StatusNotFound)
+		case errors.Is(err, serv.ErrInvalidSubID):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		default:
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+		}
 		return
 	}
 
