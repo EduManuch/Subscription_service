@@ -14,5 +14,5 @@ type Subscription struct {
 	StartDate   time.Time  `json:"start_date" db:"start_date"`
 	EndDate     *time.Time `json:"end_date,omitempty" db:"end_date"`
 	CreatedAt   time.Time  `json:"created_at" db:"created_at"`
-	UpdateAt    time.Time  `json:"update_at" db:"update_at"`
+	UpdatedAt   time.Time  `json:"update_at" db:"update_at"`
 }

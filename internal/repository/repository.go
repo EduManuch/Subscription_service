@@ -36,5 +36,5 @@ func (sr *SubscriptionRepository) Create(ctx context.Context, s *model.Subscript
 		s.UserID,
 		s.StartDate,
 		s.EndDate,
-	).Scan(&s.ID, &s.CreatedAt, &s.UpdateAt)
+	).Scan(&s.ID, &s.CreatedAt, &s.UpdatedAt)
 }

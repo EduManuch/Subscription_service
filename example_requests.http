@@ -1,0 +1,21 @@
+###
+# curl -X POST http://localhost:8080/subscriptions
+#  -H "Content-Type: application/json"
+#  -d '{
+#    "service_name": "Yandex Plus",
+#    "price": 400,
+#    "user_id": "60601fee-2bf1-4721-ae6f-7636e79a0cba",
+#    "start_date": "07-2025"
+#  }'
+POST http://localhost:8080/subscriptions
+Content-Type: application/json
+
+{
+  "service_name": "Yandex Plus",
+  "price": 400,
+  "user_id": "60601fee-2bf1-4721-ae6f-7636e79a0cba",
+  "start_date": "07-2025",
+  "end_date": "06-2025"
+}
+
+###
