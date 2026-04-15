@@ -186,3 +186,20 @@ func (h *SubscriptionHandler) Update(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(response)
 }
+
+func (h *SubscriptionHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+
+	err := h.service.Delete(r.Context(), id)
+	if err != nil {
+		switch {
+		case errors.Is(err, serv.ErrSubNotFound):
+			http.Error(w, err.Error(), http.StatusNotFound)
+		default:
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

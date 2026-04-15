@@ -200,3 +200,20 @@ func (s *SubscriptionService) Update(ctx context.Context, id string, input Updat
 
 	return mSubscription, nil
 }
+
+func (s *SubscriptionService) Delete(ctx context.Context, id string) error {
+	parsedID, err := uuid.Parse(id)
+	if err != nil {
+		return fmt.Errorf("invalid subscription id: %w", err)
+	}
+
+	err = s.repo.Delete(ctx, parsedID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrSubNotFound
+		}
+		return err
+	}
+
+	return nil
+}

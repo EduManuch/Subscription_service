@@ -7,6 +7,7 @@ import (
 	"sub_service/internal/model"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -167,4 +168,19 @@ func (sr *SubscriptionRepository) Update(ctx context.Context, s *model.Subscript
 		s.EndDate,
 		s.ID,
 	).Scan(&s.UpdatedAt)
+}
+
+func (r *SubscriptionRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	query := `DELETE FROM subscriptions WHERE id = $1`
+
+	cmdTag, err := r.db.Exec(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	if cmdTag.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+
+	return nil
 }

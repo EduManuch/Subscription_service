@@ -51,3 +51,6 @@ Content-Type: application/json
   "start_date": "07-2025",
   "end_date": "09-2025"
 }
+
+### curl -X DELETE http://localhost:8080/subscriptions/7bd8b793-103c-4370-95db-4fbfdfaf9c50 -i
+DELETE http://localhost:8080/subscriptions/7bd8b793-103c-4370-95db-4fbfdfaf9c50
