@@ -5,7 +5,11 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"sub_service/internal/model"
 	serv "sub_service/internal/service"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 type SubscriptionHandler struct {
@@ -14,6 +18,19 @@ type SubscriptionHandler struct {
 
 func NewSubscriptionHandler(service *serv.SubscriptionService) *SubscriptionHandler {
 	return &SubscriptionHandler{service: service}
+}
+
+// CRLResponse - Create, Read, List response
+// Ответ для Create, GetByID и List
+type CRLResponse struct {
+	ID          uuid.UUID
+	ServiceName string    `json:"service_name"`
+	Price       int       `json:"price"`
+	UserID      uuid.UUID `json:"user_id"`
+	StartDate   string    `json:"start_date"`
+	EndDate     string    `json:"end_date,omitempty"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 func (h *SubscriptionHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -39,19 +56,7 @@ func (h *SubscriptionHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := map[string]any{
-		"id":           sub.ID,
-		"service_name": sub.ServiceName,
-		"price":        sub.Price,
-		"user_id":      sub.UserID,
-		"start_date":   sub.StartDate.Format("01-2006"),
-		"created_at":   sub.CreatedAt,
-		"updated_at":   sub.UpdatedAt,
-	}
-
-	if sub.EndDate != nil {
-		response["end_date"] = sub.EndDate.Format("01-2006")
-	}
+	response := createResponse(sub)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -74,19 +79,7 @@ func (h *SubscriptionHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := map[string]any{
-		"id":           sub.ID,
-		"service_name": sub.ServiceName,
-		"price":        sub.Price,
-		"user_id":      sub.UserID,
-		"start_date":   sub.StartDate.Format("01-2006"),
-		"created_at":   sub.CreatedAt,
-		"updated_at":   sub.UpdatedAt,
-	}
-
-	if sub.EndDate != nil {
-		response["end_date"] = sub.EndDate.Format("01-2006")
-	}
+	response := createResponse(sub)
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(response)
@@ -222,4 +215,22 @@ func (h *SubscriptionHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func createResponse(sub *model.Subscription) *CRLResponse {
+	response := CRLResponse{
+		ID:          sub.ID,
+		ServiceName: sub.ServiceName,
+		Price:       sub.Price,
+		UserID:      sub.UserID,
+		StartDate:   sub.StartDate.Format("01-2006"),
+		CreatedAt:   sub.CreatedAt,
+		UpdatedAt:   sub.UpdatedAt,
+	}
+
+	if sub.EndDate != nil {
+		response.EndDate = sub.EndDate.Format("01-2006")
+	}
+
+	return &response
 }
