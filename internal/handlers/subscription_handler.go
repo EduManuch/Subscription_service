@@ -149,3 +149,40 @@ func (h *SubscriptionHandler) List(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(response)
 }
+
+func (h *SubscriptionHandler) Update(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+
+	var input serv.UpdateSubscriptionInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	sub, err := h.service.Update(r.Context(), id, input)
+	if err != nil {
+		switch {
+		case errors.Is(err, serv.ErrSubNotFound):
+			http.Error(w, err.Error(), http.StatusNotFound)
+		default:
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+		return
+	}
+
+	response := map[string]any{
+		"id":           sub.ID,
+		"service_name": sub.ServiceName,
+		"price":        sub.Price,
+		"user_id":      sub.UserID,
+		"start_date":   sub.StartDate.Format("01-2006"),
+		"updated_at":   sub.UpdatedAt,
+	}
+
+	if sub.EndDate != nil {
+		response["end_date"] = sub.EndDate.Format("01-2006")
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(response)
+}

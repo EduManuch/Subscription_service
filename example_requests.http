@@ -17,7 +17,7 @@ Content-Type: application/json
   "end_date": "08-2025"
 }
 
-### curl http://localhost:8080/subscriptions/
+### curl http://localhost:8080/subscriptions/5383e26e-6515-42be-b6df-519b0c6741f7
 GET http://localhost:8080/subscriptions/5383e26e-6515-42be-b6df-519b0c6741f7
 
 ### curl "http://localhost:8080/subscriptions"
@@ -31,3 +31,23 @@ GET http://localhost:8080/subscriptions?user_id=60601fee-2bf1-4721-ae6f-7636e79a
 
 ### curl "http://localhost:8080/subscriptions?service_name=Yandex Plus"
 GET http://localhost:8080/subscriptions?service_name=Yandex Plus
+
+### curl -X PUT http://localhost:8080/subscriptions/5383e26e-6515-42be-b6df-519b0c6741f7 \
+#  -H "Content-Type: application/json" \
+#  -d '{
+#    "service_name": "Netflix",
+#    "price": 999,
+#    "user_id": "60601fee-2bf1-4721-ae6f-7636e79a0cba",
+#   "start_date": "07-2025",
+#    "end_date": "09-2025"
+#  }'
+PUT http://localhost:8080/subscriptions/5383e26e-6515-42be-b6df-519b0c6741f7
+Content-Type: application/json
+
+{
+  "service_name": "Netflix",
+  "price": 999,
+  "user_id": "60601fee-2bf1-4721-ae6f-7636e79a0cba",
+  "start_date": "07-2025",
+  "end_date": "09-2025"
+}

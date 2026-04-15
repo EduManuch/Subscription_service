@@ -143,3 +143,28 @@ func (sr *SubscriptionRepository) List(ctx context.Context, f ListSubscriptionsF
 	}
 	return subscriptions, nil
 }
+
+func (sr *SubscriptionRepository) Update(ctx context.Context, s *model.Subscription) error {
+	query := `
+		UPDATE subscriptions
+		SET service_name = $1,
+		    price = $2,
+		    user_id = $3,
+		    start_date = $4,
+		    end_date = $5,
+		    updated_at = NOW()
+		WHERE id = $6
+		RETURNING updated_at
+	`
+
+	return sr.db.QueryRow(
+		ctx,
+		query,
+		s.ServiceName,
+		s.Price,
+		s.UserID,
+		s.StartDate,
+		s.EndDate,
+		s.ID,
+	).Scan(&s.UpdatedAt)
+}
