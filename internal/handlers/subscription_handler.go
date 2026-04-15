@@ -25,7 +25,17 @@ func (h *SubscriptionHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	sub, err := h.service.Create(r.Context(), input)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		switch {
+		case errors.Is(err, serv.ErrServiceNameRequired) ||
+			errors.Is(err, serv.ErrPriceLessThan0) ||
+			errors.Is(err, serv.ErrInvalidUserID) ||
+			errors.Is(err, serv.ErrInvalidStartDate) ||
+			errors.Is(err, serv.ErrInvalidEndDate) ||
+			errors.Is(err, serv.ErrEndDateGreaterStartDate):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		default:
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -164,8 +174,16 @@ func (h *SubscriptionHandler) Update(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.Is(err, serv.ErrSubNotFound):
 			http.Error(w, err.Error(), http.StatusNotFound)
-		default:
+		case errors.Is(err, serv.ErrInvalidSubID) ||
+			errors.Is(err, serv.ErrServiceNameRequired) ||
+			errors.Is(err, serv.ErrPriceLessThan0) ||
+			errors.Is(err, serv.ErrInvalidUserID) ||
+			errors.Is(err, serv.ErrInvalidStartDate) ||
+			errors.Is(err, serv.ErrInvalidEndDate) ||
+			errors.Is(err, serv.ErrEndDateGreaterStartDate):
 			http.Error(w, err.Error(), http.StatusBadRequest)
+		default:
+			http.Error(w, "internal server error", http.StatusInternalServerError)
 		}
 		return
 	}
@@ -195,8 +213,10 @@ func (h *SubscriptionHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.Is(err, serv.ErrSubNotFound):
 			http.Error(w, err.Error(), http.StatusNotFound)
-		default:
+		case errors.Is(err, serv.ErrInvalidSubID):
 			http.Error(w, err.Error(), http.StatusBadRequest)
+		default:
+			http.Error(w, "internal server error", http.StatusInternalServerError)
 		}
 		return
 	}

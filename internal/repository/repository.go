@@ -170,10 +170,10 @@ func (sr *SubscriptionRepository) Update(ctx context.Context, s *model.Subscript
 	).Scan(&s.UpdatedAt)
 }
 
-func (r *SubscriptionRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (sr *SubscriptionRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	query := `DELETE FROM subscriptions WHERE id = $1`
 
-	cmdTag, err := r.db.Exec(ctx, query, id)
+	cmdTag, err := sr.db.Exec(ctx, query, id)
 	if err != nil {
 		return err
 	}

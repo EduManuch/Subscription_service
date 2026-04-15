@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sub_service/internal/model"
 	"sub_service/internal/repository"
 	"time"
@@ -13,8 +12,14 @@ import (
 )
 
 var (
-	ErrSubNotFound  = errors.New("subscription not found")
-	ErrInvalidSubID = errors.New("invalid subscription id")
+	ErrSubNotFound             = errors.New("subscription not found")
+	ErrInvalidSubID            = errors.New("invalid subscription id")
+	ErrServiceNameRequired     = errors.New("service name is required")
+	ErrPriceLessThan0          = errors.New("price must be greater than 0")
+	ErrInvalidUserID           = errors.New("invalid user ID")
+	ErrInvalidStartDate        = errors.New("invalid start date")
+	ErrInvalidEndDate          = errors.New("invalid end date")
+	ErrEndDateGreaterStartDate = errors.New("end date must be equal or after start date")
 )
 
 type SubscriptionService struct {
@@ -35,32 +40,32 @@ type CreationSubscriptionInput struct {
 
 func (s *SubscriptionService) Create(ctx context.Context, input CreationSubscriptionInput) (*model.Subscription, error) {
 	if input.ServiceName == "" {
-		return nil, fmt.Errorf("service name is required")
+		return nil, ErrServiceNameRequired
 	}
 
 	if input.Price <= 0 {
-		return nil, fmt.Errorf("price must be greater than 0")
+		return nil, ErrPriceLessThan0
 	}
 
 	userID, err := uuid.Parse(input.UserID)
 	if err != nil {
-		return nil, fmt.Errorf("invalid user ID: %w", err)
+		return nil, ErrInvalidUserID
 	}
 
 	startDate, err := time.Parse("01-2006", input.StartDate)
 	if err != nil {
-		return nil, fmt.Errorf("invalid start date: %w", err)
+		return nil, ErrInvalidStartDate
 	}
 
 	var endDate *time.Time
 	if input.EndDate != nil && *input.EndDate != "" {
 		parsedEndDate, err := time.Parse("01-2006", *input.EndDate)
 		if err != nil {
-			return nil, fmt.Errorf("invalid end date: %w", err)
+			return nil, ErrInvalidEndDate
 		}
 		endDate = &parsedEndDate
 		if endDate.Before(startDate) {
-			return nil, fmt.Errorf("invalid end date: should be equal or after start date")
+			return nil, ErrEndDateGreaterStartDate
 		}
 	}
 
@@ -81,7 +86,6 @@ func (s *SubscriptionService) Create(ctx context.Context, input CreationSubscrip
 
 func (s *SubscriptionService) GetByID(ctx context.Context, id string) (*model.Subscription, error) {
 	parsedID, err := uuid.Parse(id)
-
 	if err != nil {
 		return nil, ErrInvalidSubID
 	}
@@ -148,36 +152,36 @@ type UpdateSubscriptionInput struct {
 func (s *SubscriptionService) Update(ctx context.Context, id string, input UpdateSubscriptionInput) (*model.Subscription, error) {
 	parsedID, err := uuid.Parse(id)
 	if err != nil {
-		return nil, fmt.Errorf("invalid subscription id: %w", err)
+		return nil, ErrInvalidSubID
 	}
 
 	if input.ServiceName == "" {
-		return nil, fmt.Errorf("service name is required")
+		return nil, ErrServiceNameRequired
 	}
 
 	if input.Price <= 0 {
-		return nil, fmt.Errorf("price must be greater than 0")
+		return nil, ErrPriceLessThan0
 	}
 
 	userID, err := uuid.Parse(input.UserID)
 	if err != nil {
-		return nil, fmt.Errorf("invalid user ID: %w", err)
+		return nil, ErrInvalidUserID
 	}
 
 	startDate, err := time.Parse("01-2006", input.StartDate)
 	if err != nil {
-		return nil, fmt.Errorf("invalid start date: %w", err)
+		return nil, ErrInvalidStartDate
 	}
 
 	var endDate *time.Time
 	if input.EndDate != nil && *input.EndDate != "" {
 		parsedEndDate, err := time.Parse("01-2006", *input.EndDate)
 		if err != nil {
-			return nil, fmt.Errorf("invalid end date: %w", err)
+			return nil, ErrInvalidEndDate
 		}
 		endDate = &parsedEndDate
 		if endDate.Before(startDate) {
-			return nil, fmt.Errorf("invalid end date: should be equal or after start date")
+			return nil, ErrEndDateGreaterStartDate
 		}
 	}
 
@@ -204,7 +208,7 @@ func (s *SubscriptionService) Update(ctx context.Context, id string, input Updat
 func (s *SubscriptionService) Delete(ctx context.Context, id string) error {
 	parsedID, err := uuid.Parse(id)
 	if err != nil {
-		return fmt.Errorf("invalid subscription id: %w", err)
+		return ErrInvalidSubID
 	}
 
 	err = s.repo.Delete(ctx, parsedID)
