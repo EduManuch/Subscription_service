@@ -1,5 +1,4 @@
-###
-# curl -X POST http://localhost:8080/subscriptions
+### curl -X POST http://localhost:8080/subscriptions
 #  -H "Content-Type: application/json"
 #  -d '{
 #    "service_name": "Yandex Plus",
@@ -17,9 +16,18 @@ Content-Type: application/json
   "start_date": "07-2025",
   "end_date": "08-2025"
 }
-###
 
-###
-# curl http://localhost:8080/subscriptions/
+### curl http://localhost:8080/subscriptions/
 GET http://localhost:8080/subscriptions/5383e26e-6515-42be-b6df-519b0c6741f7
-###
+
+### curl "http://localhost:8080/subscriptions"
+GET http://localhost:8080/subscriptions
+
+### curl "http://localhost:8080/subscriptions?limit=5&offset=0"
+GET http://localhost:8080/subscriptions?limit=3&offset=0
+
+### curl "http://localhost:8080/subscriptions?user_id=60601fee-2bf1-4721-ae6f-7636e79a0cba"
+GET http://localhost:8080/subscriptions?user_id=60601fee-2bf1-4721-ae6f-7636e79a0cba
+
+### curl "http://localhost:8080/subscriptions?service_name=Yandex Plus"
+GET http://localhost:8080/subscriptions?service_name=Yandex Plus

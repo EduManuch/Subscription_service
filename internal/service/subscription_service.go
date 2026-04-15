@@ -12,6 +12,11 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+var (
+	ErrSubNotFound  = errors.New("subscription not found")
+	ErrInvalidSubID = errors.New("invalid subscription id")
+)
+
 type SubscriptionService struct {
 	repo *repository.SubscriptionRepository
 }
@@ -27,11 +32,6 @@ type CreationSubscriptionInput struct {
 	StartDate   string  `json:"start_date"`
 	EndDate     *string `json:"end_date,omitempty"`
 }
-
-var (
-	ErrSubNotFound  = errors.New("subscription not found")
-	ErrInvalidSubID = errors.New("invalid subscription id")
-)
 
 func (s *SubscriptionService) Create(ctx context.Context, input CreationSubscriptionInput) (*model.Subscription, error) {
 	if input.ServiceName == "" {
@@ -94,4 +94,45 @@ func (s *SubscriptionService) GetByID(ctx context.Context, id string) (*model.Su
 		return nil, err
 	}
 	return sub, nil
+}
+
+type ListSubscriptionsInput struct {
+	UserID      *string
+	ServiceName *string
+	Limit       int
+	Offset      int
+}
+
+func (s *SubscriptionService) List(ctx context.Context, input ListSubscriptionsInput) ([]model.Subscription, error) {
+	limit := input.Limit
+	offset := input.Offset
+
+	// Учтем, что таблица может быть очень большой и получать все записи разом будет неоптимально
+	if limit <= 0 {
+		limit = 10
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	var userID *uuid.UUID
+	for input.UserID != nil && *input.UserID == "" {
+		parsed, err := uuid.Parse(*input.UserID)
+		if err != nil {
+			return nil, err
+		}
+		userID = &parsed
+	}
+
+	filter := repository.ListSubscriptionsFilter{
+		UserID:      userID,
+		ServiceName: input.ServiceName,
+		Limit:       limit,
+		Offset:      offset,
+	}
+
+	return s.repo.List(ctx, filter)
 }

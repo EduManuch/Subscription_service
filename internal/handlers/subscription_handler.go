@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	serv "sub_service/internal/service"
 )
 
@@ -16,13 +17,6 @@ func NewSubscriptionHandler(service *serv.SubscriptionService) *SubscriptionHand
 }
 
 func (h *SubscriptionHandler) Create(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-
 	var input serv.CreationSubscriptionInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
@@ -49,18 +43,12 @@ func (h *SubscriptionHandler) Create(w http.ResponseWriter, r *http.Request) {
 		response["end_date"] = sub.EndDate.Format("01-2006")
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(response)
 }
 
 func (h *SubscriptionHandler) GetByID(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	if r.Method != http.MethodGet {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-
 	id := r.PathValue("id")
 
 	sub, err := h.service.GetByID(r.Context(), id)
@@ -90,5 +78,74 @@ func (h *SubscriptionHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 		response["end_date"] = sub.EndDate.Format("01-2006")
 	}
 
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(response)
+}
+
+func (h *SubscriptionHandler) List(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+
+	var userID *string
+	if v := query.Get("user_id"); v != "" {
+		userID = &v
+	}
+
+	var serviceName *string
+	if v := query.Get("service_name"); v != "" {
+		serviceName = &v
+	}
+
+	limit := 10
+	if v := query.Get("limit"); v != "" {
+		parsed, err := strconv.Atoi(v)
+		if err != nil {
+			http.Error(w, "invalid limit", http.StatusBadRequest)
+			return
+		}
+		limit = parsed
+	}
+
+	offset := 0
+	if v := query.Get("offset"); v != "" {
+		parsed, err := strconv.Atoi(v)
+		if err != nil {
+			http.Error(w, "invalid offset", http.StatusBadRequest)
+			return
+		}
+		offset = parsed
+	}
+
+	subscriptions, err := h.service.List(r.Context(), serv.ListSubscriptionsInput{
+		UserID:      userID,
+		ServiceName: serviceName,
+		Limit:       limit,
+		Offset:      offset,
+	})
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	response := make([]map[string]any, 0, len(subscriptions))
+	for _, s := range subscriptions {
+		sub := map[string]any{
+			"id":           s.ID,
+			"service_name": s.ServiceName,
+			"price":        s.Price,
+			"user_id":      s.UserID,
+			"start_date":   s.StartDate.Format("01-2006"),
+			"created_at":   s.CreatedAt,
+			"updated_at":   s.UpdatedAt,
+		}
+
+		if s.EndDate != nil {
+			sub["end_date"] = s.EndDate.Format("01-2006")
+		}
+
+		response = append(response, sub)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(response)
 }

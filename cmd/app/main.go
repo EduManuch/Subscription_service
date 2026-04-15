@@ -26,6 +26,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /subscriptions", subscriptionHandler.Create)
 	mux.HandleFunc("GET /subscriptions/{id}", subscriptionHandler.GetByID)
+	mux.HandleFunc("GET /subscriptions", subscriptionHandler.List)
 
 	log.Printf("Server started on: %s", cfg.Port)
 	if err := http.ListenAndServe(cfg.Port, mux); err != nil {
