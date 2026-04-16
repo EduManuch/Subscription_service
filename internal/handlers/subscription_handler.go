@@ -8,9 +8,6 @@ import (
 	"strconv"
 	"sub_service/internal/model"
 	serv "sub_service/internal/service"
-	"time"
-
-	"github.com/google/uuid"
 )
 
 type SubscriptionHandler struct {
@@ -25,75 +22,71 @@ func NewSubscriptionHandler(service *serv.SubscriptionService, logger *slog.Logg
 	}
 }
 
-// CRLResponse - Create, Read, List response
-// Ответ для Create, GetByID и List
-type CRLResponse struct {
-	ID          uuid.UUID `json:"id"`
-	ServiceName string    `json:"service_name"`
-	Price       int       `json:"price"`
-	UserID      uuid.UUID `json:"user_id"`
-	StartDate   string    `json:"start_date"`
-	EndDate     string    `json:"end_date,omitempty"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-}
-
+// Create godoc
+// @Summary Create subscription
+// @Description Create a new subscription
+// @Tags subscriptions
+// @Accept json
+// @Produce json
+// @Param input body service.CreationSubscriptionInput true "Subscription payload"
+// @Success 201 {object} handlers.CRLResponse
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /subscriptions [post]
 func (h *SubscriptionHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var input serv.CreationSubscriptionInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+		h.writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "invalid request body"})
 		h.logger.Debug("invalid request body", "error", err)
 		return
 	}
 
 	sub, err := h.service.Create(r.Context(), input)
-	if err != nil {
-		switch {
-		case errors.Is(err, serv.ErrServiceNameRequired) ||
-			errors.Is(err, serv.ErrPriceLessThan0) ||
-			errors.Is(err, serv.ErrInvalidUserID) ||
-			errors.Is(err, serv.ErrInvalidStartDate) ||
-			errors.Is(err, serv.ErrInvalidEndDate) ||
-			errors.Is(err, serv.ErrEndDateGreaterStartDate):
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		default:
-			http.Error(w, "internal server error", http.StatusInternalServerError)
-			h.logger.Error("internal server error", "error", err)
-		}
+	if h.responseError(w, err) {
 		return
 	}
 
 	response := createResponse(sub)
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	_ = json.NewEncoder(w).Encode(response)
+	h.writeJSON(w, http.StatusCreated, response)
 	h.logger.Info("subscription created", "id", sub.ID)
 }
 
+// GetByID godoc
+// @Summary Get subscription by ID
+// @Tags subscriptions
+// @Produce json
+// @Param id path string true "Subscription ID"
+// @Success 200 {object} handlers.CRLResponse
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 404 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /subscriptions/{id} [get]
 func (h *SubscriptionHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
 	sub, err := h.service.GetByID(r.Context(), id)
-	if err != nil {
-		switch {
-		case errors.Is(err, serv.ErrSubNotFound):
-			http.Error(w, err.Error(), http.StatusNotFound)
-		case errors.Is(err, serv.ErrInvalidSubID):
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		default:
-			http.Error(w, "internal server error", http.StatusInternalServerError)
-			h.logger.Error("internal server error", "error", err)
-		}
+	if h.responseError(w, err) {
 		return
 	}
 
 	response := createResponse(sub)
 
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(response)
+	h.writeJSON(w, http.StatusOK, response)
 }
 
+// List godoc
+// @Summary List subscriptions
+// @Tags subscriptions
+// @Produce json
+// @Param user_id query string false "User ID"
+// @Param service_name query string false "Service name"
+// @Param limit query int false "Limit"
+// @Param offset query int false "Offset"
+// @Success 200 {array} handlers.CRLResponse
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /subscriptions [get]
 func (h *SubscriptionHandler) List(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 
@@ -111,7 +104,7 @@ func (h *SubscriptionHandler) List(w http.ResponseWriter, r *http.Request) {
 	if v := query.Get("limit"); v != "" {
 		parsed, err := strconv.Atoi(v)
 		if err != nil {
-			http.Error(w, "invalid limit", http.StatusBadRequest)
+			h.writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "invalid limit"})
 			h.logger.Debug("invalid limit", "error", err)
 			return
 		}
@@ -122,7 +115,7 @@ func (h *SubscriptionHandler) List(w http.ResponseWriter, r *http.Request) {
 	if v := query.Get("offset"); v != "" {
 		parsed, err := strconv.Atoi(v)
 		if err != nil {
-			http.Error(w, "invalid offset", http.StatusBadRequest)
+			h.writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "invalid offset"})
 			h.logger.Debug("invalid offset", "error", err)
 			return
 		}
@@ -136,84 +129,68 @@ func (h *SubscriptionHandler) List(w http.ResponseWriter, r *http.Request) {
 		Offset:      offset,
 	})
 
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	if h.responseError(w, err) {
 		return
 	}
 
 	response := make([]CRLResponse, 0, len(subscriptions))
 	for _, s := range subscriptions {
 		resp := createResponse(&s)
-		response = append(response, *resp)
+		response = append(response, resp)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(response)
+	h.writeJSON(w, http.StatusOK, response)
 	h.logger.Info("subscriptions listed", "count", len(subscriptions))
 }
 
+// Update godoc
+// @Summary Update subscription
+// @Tags subscriptions
+// @Accept json
+// @Produce json
+// @Param id path string true "Subscription ID"
+// @Param input body service.UpdateSubscriptionInput true "Subscription payload"
+// @Success 200 {object} handlers.CRLResponse
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 404 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /subscriptions/{id} [put]
 func (h *SubscriptionHandler) Update(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
 	var input serv.UpdateSubscriptionInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+		h.writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "invalid request body"})
 		h.logger.Debug("invalid request body", "error", err)
 		return
 	}
 
 	sub, err := h.service.Update(r.Context(), id, input)
-	if err != nil {
-		switch {
-		case errors.Is(err, serv.ErrSubNotFound):
-			http.Error(w, err.Error(), http.StatusNotFound)
-		case errors.Is(err, serv.ErrInvalidSubID) ||
-			errors.Is(err, serv.ErrServiceNameRequired) ||
-			errors.Is(err, serv.ErrPriceLessThan0) ||
-			errors.Is(err, serv.ErrInvalidUserID) ||
-			errors.Is(err, serv.ErrInvalidStartDate) ||
-			errors.Is(err, serv.ErrInvalidEndDate) ||
-			errors.Is(err, serv.ErrEndDateGreaterStartDate):
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		default:
-			http.Error(w, "internal server error", http.StatusInternalServerError)
-			h.logger.Error("internal server error", "error", err)
-		}
+	if h.responseError(w, err) {
 		return
 	}
 
-	response := map[string]any{
-		"id":           sub.ID,
-		"service_name": sub.ServiceName,
-		"price":        sub.Price,
-		"user_id":      sub.UserID,
-		"start_date":   sub.StartDate.Format("01-2006"),
-		"updated_at":   sub.UpdatedAt,
-	}
+	response := createResponse(sub)
 
-	if sub.EndDate != nil {
-		response["end_date"] = sub.EndDate.Format("01-2006")
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(response)
+	h.writeJSON(w, http.StatusOK, response)
 	h.logger.Info("subscription updated", "id", sub.ID)
 }
 
+// Delete godoc
+// @Summary Delete subscription
+// @Tags subscriptions
+// @Produce json
+// @Param id path string true "Subscription ID"
+// @Success 204
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 404 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /subscriptions/{id} [delete]
 func (h *SubscriptionHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
 	err := h.service.Delete(r.Context(), id)
-	if err != nil {
-		switch {
-		case errors.Is(err, serv.ErrSubNotFound):
-			http.Error(w, err.Error(), http.StatusNotFound)
-		case errors.Is(err, serv.ErrInvalidSubID):
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		default:
-			http.Error(w, "internal server error", http.StatusInternalServerError)
-			h.logger.Error("internal server error", "error", err)
-		}
+	if h.responseError(w, err) {
 		return
 	}
 
@@ -221,13 +198,26 @@ func (h *SubscriptionHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	h.logger.Info("subscription deleted", "id", id)
 }
 
+// CalculateTotalPrice godoc
+// @Summary Calculate total subscription price
+// @Tags subscriptions
+// @Produce json
+// @Param from query string true "Start period in MM-YYYY"
+// @Param to query string true "End period in MM-YYYY"
+// @Param user_id query string false "User ID"
+// @Param service_name query string false "Service name"
+// @Success 200 {object} handlers.TotalPriceResponse
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /subscriptions/total [get]
 func (h *SubscriptionHandler) CalculateTotalPrice(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	from := query.Get("from")
 	to := query.Get("to")
 
 	if from == "" || to == "" {
-		http.Error(w, "from and to dates are required", http.StatusBadRequest)
+		h.writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "from and to dates are required"})
+		h.logger.Debug("missing required query params", "from", from, "to", to)
 		return
 	}
 
@@ -248,31 +238,20 @@ func (h *SubscriptionHandler) CalculateTotalPrice(w http.ResponseWriter, r *http
 		ServiceName: serviceName,
 	})
 
-	if err != nil {
-		switch {
-		case errors.Is(err, serv.ErrInvalidStartDate) ||
-			errors.Is(err, serv.ErrInvalidEndDate) ||
-			errors.Is(err, serv.ErrEndDateGreaterStartDate) ||
-			errors.Is(err, serv.ErrInvalidUserID):
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		default:
-			http.Error(w, "internal server error", http.StatusInternalServerError)
-			h.logger.Error("internal server error", "error", err)
-		}
+	if h.responseError(w, err) {
 		return
 	}
 
-	response := map[string]any{
-		"total": total,
-		"from":  from,
-		"to":    to,
+	response := TotalPriceResponse{
+		Total: total,
+		From:  from,
+		To:    to,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(response)
+	h.writeJSON(w, http.StatusOK, response)
 }
 
-func createResponse(sub *model.Subscription) *CRLResponse {
+func createResponse(sub *model.Subscription) CRLResponse {
 	response := CRLResponse{
 		ID:          sub.ID,
 		ServiceName: sub.ServiceName,
@@ -287,5 +266,36 @@ func createResponse(sub *model.Subscription) *CRLResponse {
 		response.EndDate = sub.EndDate.Format("01-2006")
 	}
 
-	return &response
+	return response
+}
+
+func (h *SubscriptionHandler) responseError(w http.ResponseWriter, err error) bool {
+	if err == nil {
+		return false
+	}
+	switch {
+	case errors.Is(err, serv.ErrSubNotFound):
+		h.writeJSON(w, http.StatusNotFound, ErrorResponse{Error: err.Error()})
+	case errors.Is(err, serv.ErrInvalidSubID) ||
+		errors.Is(err, serv.ErrServiceNameRequired) ||
+		errors.Is(err, serv.ErrPriceLessThan0) ||
+		errors.Is(err, serv.ErrInvalidUserID) ||
+		errors.Is(err, serv.ErrInvalidStartDate) ||
+		errors.Is(err, serv.ErrInvalidEndDate) ||
+		errors.Is(err, serv.ErrEndDateGreaterStartDate):
+		h.writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+	default:
+		h.writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "internal server error"})
+		h.logger.Error("internal server error", "error", err)
+	}
+	return true
+}
+
+func (h *SubscriptionHandler) writeJSON(w http.ResponseWriter, status int, data any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	err := json.NewEncoder(w).Encode(data)
+	if err != nil {
+		h.logger.Error("failed to encode json response", "error", err)
+	}
 }

@@ -1,9 +1,14 @@
+// @title Subscription Service API
+// @version 1.0
+// @description REST API for managing user subscriptions
+// @host localhost:8080
+// @BasePath /
 package main
 
 import (
-	//"log"
 	"net/http"
 	"os"
+	_ "sub_service/docs"
 	"sub_service/internal/config"
 	"sub_service/internal/handlers"
 	"sub_service/internal/logger"
@@ -11,6 +16,8 @@ import (
 	"sub_service/internal/repository"
 	"sub_service/internal/service"
 	"sub_service/internal/storage"
+
+	swagger "github.com/swaggo/http-swagger"
 )
 
 func main() {
@@ -35,6 +42,7 @@ func main() {
 	mux.HandleFunc("PUT /subscriptions/{id}", subscriptionHandler.Update)
 	mux.HandleFunc("DELETE /subscriptions/{id}", subscriptionHandler.Delete)
 	mux.HandleFunc("GET /subscriptions/total", subscriptionHandler.CalculateTotalPrice)
+	mux.Handle("GET /swagger/", swagger.WrapHandler)
 
 	muxWithMiddleware := middleware.LoggingMiddleware(log)(mux)
 

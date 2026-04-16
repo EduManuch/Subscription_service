@@ -122,7 +122,7 @@ func (s *SubscriptionService) List(ctx context.Context, input ListSubscriptionsI
 	if input.UserID != nil && *input.UserID != "" {
 		parsed, err := uuid.Parse(*input.UserID)
 		if err != nil {
-			return nil, err
+			return nil, ErrInvalidSubID
 		}
 		userID = &parsed
 	}

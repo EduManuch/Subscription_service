@@ -157,7 +157,7 @@ func (sr *SubscriptionRepository) Update(ctx context.Context, s *model.Subscript
 		    end_date = $5,
 		    updated_at = NOW()
 		WHERE id = $6
-		RETURNING updated_at
+		RETURNING created_at, updated_at
 	`
 
 	return sr.db.QueryRow(
@@ -169,7 +169,7 @@ func (sr *SubscriptionRepository) Update(ctx context.Context, s *model.Subscript
 		s.StartDate,
 		s.EndDate,
 		s.ID,
-	).Scan(&s.UpdatedAt)
+	).Scan(&s.CreatedAt, &s.UpdatedAt)
 }
 
 func (sr *SubscriptionRepository) Delete(ctx context.Context, id uuid.UUID) error {
