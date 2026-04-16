@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"sub_service/internal/model"
 	"time"
@@ -199,7 +200,7 @@ func (sr *SubscriptionRepository) CalculateTotalPrice(ctx context.Context, f Cal
     COALESCE(SUM(price), 0) AS total_price
 	FROM subscriptions
 	WHERE start_date >= $1
-	AND end_date <= $2
+	AND (end_date IS NULL OR end_date <= $2)
 	`
 
 	var args []any
@@ -220,13 +221,14 @@ func (sr *SubscriptionRepository) CalculateTotalPrice(ctx context.Context, f Cal
 	}
 
 	if len(conditions) > 0 {
-		query += " AND " + strings.Join(conditions, "AND")
+		query += " AND " + strings.Join(conditions, " AND ")
 	}
 
 	var total int
 	err := sr.db.QueryRow(ctx, query, args...).Scan(&total)
 
 	if err != nil {
+		log.Println(err.Error(), query)
 		return 0, err
 	}
 
