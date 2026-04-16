@@ -217,6 +217,56 @@ func (h *SubscriptionHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *SubscriptionHandler) CalculateTotalPrice(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	from := query.Get("from")
+	to := query.Get("to")
+
+	if from == "" || to == "" {
+		http.Error(w, "from and to dates are required", http.StatusBadRequest)
+		return
+	}
+
+	var userID *string
+	if v := query.Get("user_id"); v != "" {
+		userID = &v
+	}
+
+	var serviceName *string
+	if v := query.Get("service_name"); v != "" {
+		serviceName = &v
+	}
+
+	total, err := h.service.CalculateTotalPrice(r.Context(), serv.CalculateTotalPriceInput{
+		From:        from,
+		To:          to,
+		UserID:      userID,
+		ServiceName: serviceName,
+	})
+
+	if err != nil {
+		switch {
+		case errors.Is(err, serv.ErrInvalidStartDate) ||
+			errors.Is(err, serv.ErrInvalidEndDate) ||
+			errors.Is(err, serv.ErrEndDateGreaterStartDate) ||
+			errors.Is(err, serv.ErrInvalidUserID):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		default:
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	response := map[string]any{
+		"total": total,
+		"from":  from,
+		"to":    to,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(response)
+}
+
 func createResponse(sub *model.Subscription) *CRLResponse {
 	response := CRLResponse{
 		ID:          sub.ID,

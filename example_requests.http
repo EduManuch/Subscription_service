@@ -1,4 +1,5 @@
-### curl -X POST http://localhost:8080/subscriptions
+### CREATE
+# curl -X POST http://localhost:8080/subscriptions
 #  -H "Content-Type: application/json"
 #  -d '{
 #    "service_name": "Yandex Plus",
@@ -17,22 +18,28 @@ Content-Type: application/json
   "end_date": "08-2025"
 }
 
-### curl http://localhost:8080/subscriptions/5383e26e-6515-42be-b6df-519b0c6741f7
+### GetByID
+# curl http://localhost:8080/subscriptions/5383e26e-6515-42be-b6df-519b0c6741f7
 GET http://localhost:8080/subscriptions/5383e26e-6515-42be-b6df-519b0c6741f7
 
-### curl "http://localhost:8080/subscriptions"
+### LIST
+# curl "http://localhost:8080/subscriptions"
 GET http://localhost:8080/subscriptions
 
-### curl "http://localhost:8080/subscriptions?limit=5&offset=0"
+### LIST with limit and offset
+# curl "http://localhost:8080/subscriptions?limit=5&offset=0"
 GET http://localhost:8080/subscriptions?limit=3&offset=0
 
-### curl "http://localhost:8080/subscriptions?user_id=60601fee-2bf1-4721-ae6f-7636e79a0cba"
+### LIST with user_id
+# curl "http://localhost:8080/subscriptions?user_id=60601fee-2bf1-4721-ae6f-7636e79a0cba"
 GET http://localhost:8080/subscriptions?user_id=60601fee-2bf1-4721-ae6f-7636e79a0cba
 
-### curl "http://localhost:8080/subscriptions?service_name=Yandex Plus"
+### LIST with service_name
+# curl "http://localhost:8080/subscriptions?service_name=Yandex Plus"
 GET http://localhost:8080/subscriptions?service_name=Yandex Plus
 
-### curl -X PUT http://localhost:8080/subscriptions/b7402536-5a55-4ee8-a0a6-e42de4d76f54 \
+### UPDATE
+# curl -X PUT http://localhost:8080/subscriptions/b7402536-5a55-4ee8-a0a6-e42de4d76f54 \
 #  -H "Content-Type: application/json" \
 #  -d '{
 #    "service_name": "Netflix",
@@ -52,5 +59,14 @@ Content-Type: application/json
   "end_date": "09-2025"
 }
 
-### curl -X DELETE http://localhost:8080/subscriptions/7bd8b793-103c-4370-95db-4fbfdfaf9c50 -i
+### DELETE
+# curl -X DELETE http://localhost:8080/subscriptions/7bd8b793-103c-4370-95db-4fbfdfaf9c50 -i
 DELETE http://localhost:8080/subscriptions/7bd8b793-103c-4370-95db-4fbfdfaf9c50
+
+### CalculateTotalPrice only by dates
+# curl "http://localhost:8080/subscriptions/total?from=01-2025&to=12-2025"
+GET http://localhost:8080/subscriptions/total?from=01-2025&to=08-2025
+
+### CalculateTotalPrice with user_id and service_name
+# curl "http://localhost:8080/subscriptions/total?from=01-2025&to=12-2025&user_id=60601fee-2bf1-4721-ae6f-7636e79a0cba&service_name=Yandex Plus"
+GET http://localhost:8080/subscriptions/total?from=01-2025&to=12-2025&user_id=60601fee-2bf1-4721-ae6f-7636e79a0cba&service_name=Yandex Plus

@@ -29,6 +29,7 @@ func main() {
 	mux.HandleFunc("GET /subscriptions", subscriptionHandler.List)
 	mux.HandleFunc("PUT /subscriptions/{id}", subscriptionHandler.Update)
 	mux.HandleFunc("DELETE /subscriptions/{id}", subscriptionHandler.Delete)
+	mux.HandleFunc("GET /subscriptions/total", subscriptionHandler.CalculateTotalPrice)
 
 	log.Printf("Server started on: %s", cfg.Port)
 	if err := http.ListenAndServe(cfg.Port, mux); err != nil {

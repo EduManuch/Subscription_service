@@ -200,6 +200,47 @@ func (s *SubscriptionService) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
+type CalculateTotalPriceInput struct {
+	From        string
+	To          string
+	UserID      *string
+	ServiceName *string
+}
+
+func (s *SubscriptionService) CalculateTotalPrice(ctx context.Context, input CalculateTotalPriceInput) (int, error) {
+	from, err := time.Parse("01-2006", input.From)
+	if err != nil {
+		return 0, ErrInvalidStartDate
+	}
+
+	to, err := time.Parse("01-2006", input.To)
+	if err != nil {
+		return 0, ErrInvalidEndDate
+	}
+
+	if to.Before(from) {
+		return 0, ErrEndDateGreaterStartDate
+	}
+
+	var userID *uuid.UUID
+	for input.UserID != nil && *input.UserID == "" {
+		parsed, err := uuid.Parse(*input.UserID)
+		if err != nil {
+			return 0, ErrInvalidUserID
+		}
+		userID = &parsed
+	}
+
+	filter := repository.CalculatePriceFilter{
+		StartDate:   from,
+		EndDate:     to,
+		UserID:      userID,
+		ServiceName: input.ServiceName,
+	}
+
+	return s.repo.CalculateTotalPrice(ctx, filter)
+}
+
 func validateInput(input *ValidationInput) (*ValidatedData, error) {
 
 	if input.ServiceName == "" {

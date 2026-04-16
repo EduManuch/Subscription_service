@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"sub_service/internal/model"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -13,13 +14,6 @@ import (
 
 type SubscriptionRepository struct {
 	db *pgxpool.Pool
-}
-
-type ListSubscriptionsFilter struct {
-	UserID      *uuid.UUID
-	ServiceName *string
-	Limit       int
-	Offset      int
 }
 
 func NewSubscriptionRepository(db *pgxpool.Pool) *SubscriptionRepository {
@@ -83,6 +77,13 @@ func (sr *SubscriptionRepository) GetByID(ctx context.Context, id uuid.UUID) (*m
 	return &sub, nil
 }
 
+type ListSubscriptionsFilter struct {
+	UserID      *uuid.UUID
+	ServiceName *string
+	Limit       int
+	Offset      int
+}
+
 func (sr *SubscriptionRepository) List(ctx context.Context, f ListSubscriptionsFilter) ([]model.Subscription, error) {
 	query := `
 	SELECT id, service_name, price, user_id, start_date, end_date, created_at, updated_at
@@ -106,7 +107,7 @@ func (sr *SubscriptionRepository) List(ctx context.Context, f ListSubscriptionsF
 	}
 
 	if len(conditions) > 0 {
-		query += " WHERE " + fmt.Sprintf(strings.Join(conditions, " AND "))
+		query += " WHERE " + strings.Join(conditions, " AND ")
 	}
 
 	query += fmt.Sprintf(" ORDER BY created_at DESC LIMIT $%d OFFSET $%d", argPosition, argPosition+1)
@@ -183,4 +184,51 @@ func (sr *SubscriptionRepository) Delete(ctx context.Context, id uuid.UUID) erro
 	}
 
 	return nil
+}
+
+type CalculatePriceFilter struct {
+	StartDate   time.Time
+	EndDate     time.Time
+	UserID      *uuid.UUID
+	ServiceName *string
+}
+
+func (sr *SubscriptionRepository) CalculateTotalPrice(ctx context.Context, f CalculatePriceFilter) (int, error) {
+	query := `
+	SELECT
+    COALESCE(SUM(price), 0) AS total_price
+	FROM subscriptions
+	WHERE start_date >= $1
+	AND end_date <= $2
+	`
+
+	var args []any
+	var conditions []string
+	argPosition := 3
+
+	args = append(args, f.StartDate, f.EndDate)
+
+	if f.UserID != nil {
+		conditions = append(conditions, fmt.Sprintf("user_id = $%d", argPosition))
+		args = append(args, *f.UserID)
+		argPosition++
+	}
+
+	if f.ServiceName != nil {
+		conditions = append(conditions, fmt.Sprintf("service_name = $%d", argPosition))
+		args = append(args, *f.ServiceName)
+	}
+
+	if len(conditions) > 0 {
+		query += " AND " + strings.Join(conditions, "AND")
+	}
+
+	var total int
+	err := sr.db.QueryRow(ctx, query, args...).Scan(&total)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return total, nil
 }
