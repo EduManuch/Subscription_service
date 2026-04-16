@@ -46,8 +46,8 @@ func main() {
 
 	muxWithMiddleware := middleware.LoggingMiddleware(log)(mux)
 
-	log.Info("Server started", "address", cfg.Port)
-	if err := http.ListenAndServe(cfg.Port, muxWithMiddleware); err != nil {
+	log.Info("Server started", "address", cfg.AppPort)
+	if err := http.ListenAndServe(cfg.AppPort, muxWithMiddleware); err != nil {
 		log.Error("failed to start server", "error", err)
 		os.Exit(1)
 	}
