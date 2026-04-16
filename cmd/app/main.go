@@ -1,10 +1,13 @@
 package main
 
 import (
-	"log"
+	//"log"
 	"net/http"
+	"os"
 	"sub_service/internal/config"
 	"sub_service/internal/handlers"
+	"sub_service/internal/logger"
+	"sub_service/internal/middleware"
 	"sub_service/internal/repository"
 	"sub_service/internal/service"
 	"sub_service/internal/storage"
@@ -12,16 +15,18 @@ import (
 
 func main() {
 	cfg := config.Load()
+	log := logger.New(cfg.LogLevel)
 
 	db, err := storage.NewPostgres(cfg)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err.Error())
+		os.Exit(1)
 	}
 	defer db.Close()
 
 	repo := repository.NewSubscriptionRepository(db)
 	subscriptionService := service.NewSubscriptionService(repo)
-	subscriptionHandler := handlers.NewSubscriptionHandler(subscriptionService)
+	subscriptionHandler := handlers.NewSubscriptionHandler(subscriptionService, log)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /subscriptions", subscriptionHandler.Create)
@@ -31,8 +36,11 @@ func main() {
 	mux.HandleFunc("DELETE /subscriptions/{id}", subscriptionHandler.Delete)
 	mux.HandleFunc("GET /subscriptions/total", subscriptionHandler.CalculateTotalPrice)
 
-	log.Printf("Server started on: %s", cfg.Port)
-	if err := http.ListenAndServe(cfg.Port, mux); err != nil {
-		log.Fatal(err)
+	muxWithMiddleware := middleware.LoggingMiddleware(log)(mux)
+
+	log.Info("Server started", "address", cfg.Port)
+	if err := http.ListenAndServe(cfg.Port, muxWithMiddleware); err != nil {
+		log.Error("failed to start server", "error", err)
+		os.Exit(1)
 	}
 }

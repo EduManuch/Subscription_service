@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"sub_service/internal/model"
@@ -14,10 +15,14 @@ import (
 
 type SubscriptionHandler struct {
 	service *serv.SubscriptionService
+	logger  *slog.Logger
 }
 
-func NewSubscriptionHandler(service *serv.SubscriptionService) *SubscriptionHandler {
-	return &SubscriptionHandler{service: service}
+func NewSubscriptionHandler(service *serv.SubscriptionService, logger *slog.Logger) *SubscriptionHandler {
+	return &SubscriptionHandler{
+		service: service,
+		logger:  logger,
+	}
 }
 
 // CRLResponse - Create, Read, List response
@@ -37,6 +42,7 @@ func (h *SubscriptionHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var input serv.CreationSubscriptionInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
+		h.logger.Debug("invalid request body", "error", err)
 		return
 	}
 
@@ -52,6 +58,7 @@ func (h *SubscriptionHandler) Create(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		default:
 			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.logger.Error("internal server error", "error", err)
 		}
 		return
 	}
@@ -61,6 +68,7 @@ func (h *SubscriptionHandler) Create(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(response)
+	h.logger.Info("subscription created", "id", sub.ID)
 }
 
 func (h *SubscriptionHandler) GetByID(w http.ResponseWriter, r *http.Request) {
@@ -75,6 +83,7 @@ func (h *SubscriptionHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		default:
 			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.logger.Error("internal server error", "error", err)
 		}
 		return
 	}
@@ -103,6 +112,7 @@ func (h *SubscriptionHandler) List(w http.ResponseWriter, r *http.Request) {
 		parsed, err := strconv.Atoi(v)
 		if err != nil {
 			http.Error(w, "invalid limit", http.StatusBadRequest)
+			h.logger.Debug("invalid limit", "error", err)
 			return
 		}
 		limit = parsed
@@ -113,6 +123,7 @@ func (h *SubscriptionHandler) List(w http.ResponseWriter, r *http.Request) {
 		parsed, err := strconv.Atoi(v)
 		if err != nil {
 			http.Error(w, "invalid offset", http.StatusBadRequest)
+			h.logger.Debug("invalid offset", "error", err)
 			return
 		}
 		offset = parsed
@@ -138,6 +149,7 @@ func (h *SubscriptionHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(response)
+	h.logger.Info("subscriptions listed", "count", len(subscriptions))
 }
 
 func (h *SubscriptionHandler) Update(w http.ResponseWriter, r *http.Request) {
@@ -146,6 +158,7 @@ func (h *SubscriptionHandler) Update(w http.ResponseWriter, r *http.Request) {
 	var input serv.UpdateSubscriptionInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
+		h.logger.Debug("invalid request body", "error", err)
 		return
 	}
 
@@ -164,6 +177,7 @@ func (h *SubscriptionHandler) Update(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		default:
 			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.logger.Error("internal server error", "error", err)
 		}
 		return
 	}
@@ -183,6 +197,7 @@ func (h *SubscriptionHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(response)
+	h.logger.Info("subscription updated", "id", sub.ID)
 }
 
 func (h *SubscriptionHandler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -197,11 +212,13 @@ func (h *SubscriptionHandler) Delete(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		default:
 			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.logger.Error("internal server error", "error", err)
 		}
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+	h.logger.Info("subscription deleted", "id", id)
 }
 
 func (h *SubscriptionHandler) CalculateTotalPrice(w http.ResponseWriter, r *http.Request) {
@@ -240,6 +257,7 @@ func (h *SubscriptionHandler) CalculateTotalPrice(w http.ResponseWriter, r *http
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		default:
 			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.logger.Error("internal server error", "error", err)
 		}
 		return
 	}

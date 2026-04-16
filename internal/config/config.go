@@ -14,6 +14,7 @@ type Config struct {
 	DBName     string
 	DBUser     string
 	DBPassword string
+	LogLevel   string
 }
 
 func Load() *Config {
@@ -29,6 +30,7 @@ func Load() *Config {
 		DBName:     getEnv("DB_NAME", "sub_db"),
 		DBUser:     getEnv("DB_USER", "postgres"),
 		DBPassword: getEnv("DB_PASSWORD", "password"),
+		LogLevel:   getEnv("LOG_LEVEL", "info"),
 	}
 }
 
