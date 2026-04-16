@@ -30,6 +30,20 @@ func NewSubscriptionService(repo *repository.SubscriptionRepository) *Subscripti
 	return &SubscriptionService{repo: repo}
 }
 
+type ValidationInput struct {
+	ServiceName string
+	Price       int
+	UserID      string
+	StartDate   string
+	EndDate     *string
+}
+
+type ValidatedData struct {
+	UserID    uuid.UUID
+	StartDate time.Time
+	EndDate   *time.Time
+}
+
 type CreationSubscriptionInput struct {
 	ServiceName string  `json:"service_name"`
 	Price       int     `json:"price"`
@@ -39,42 +53,24 @@ type CreationSubscriptionInput struct {
 }
 
 func (s *SubscriptionService) Create(ctx context.Context, input CreationSubscriptionInput) (*model.Subscription, error) {
-	if input.ServiceName == "" {
-		return nil, ErrServiceNameRequired
-	}
+	vInput, err := validateInput(&ValidationInput{
+		ServiceName: input.ServiceName,
+		Price:       input.Price,
+		UserID:      input.UserID,
+		StartDate:   input.StartDate,
+		EndDate:     input.EndDate,
+	})
 
-	if input.Price <= 0 {
-		return nil, ErrPriceLessThan0
-	}
-
-	userID, err := uuid.Parse(input.UserID)
 	if err != nil {
-		return nil, ErrInvalidUserID
-	}
-
-	startDate, err := time.Parse("01-2006", input.StartDate)
-	if err != nil {
-		return nil, ErrInvalidStartDate
-	}
-
-	var endDate *time.Time
-	if input.EndDate != nil && *input.EndDate != "" {
-		parsedEndDate, err := time.Parse("01-2006", *input.EndDate)
-		if err != nil {
-			return nil, ErrInvalidEndDate
-		}
-		endDate = &parsedEndDate
-		if endDate.Before(startDate) {
-			return nil, ErrEndDateGreaterStartDate
-		}
+		return nil, err
 	}
 
 	mSubscription := &model.Subscription{
 		ServiceName: input.ServiceName,
 		Price:       input.Price,
-		UserID:      userID,
-		StartDate:   startDate,
-		EndDate:     endDate,
+		UserID:      vInput.UserID,
+		StartDate:   vInput.StartDate,
+		EndDate:     vInput.EndDate,
 	}
 
 	if err := s.repo.Create(ctx, mSubscription); err != nil {
@@ -155,6 +151,57 @@ func (s *SubscriptionService) Update(ctx context.Context, id string, input Updat
 		return nil, ErrInvalidSubID
 	}
 
+	vInput, err := validateInput(&ValidationInput{
+		ServiceName: input.ServiceName,
+		Price:       input.Price,
+		UserID:      input.UserID,
+		StartDate:   input.StartDate,
+		EndDate:     input.EndDate,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	mSubscription := &model.Subscription{
+		ID:          parsedID,
+		ServiceName: input.ServiceName,
+		Price:       input.Price,
+		UserID:      vInput.UserID,
+		StartDate:   vInput.StartDate,
+		EndDate:     vInput.EndDate,
+	}
+
+	err = s.repo.Update(ctx, mSubscription)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrSubNotFound
+		}
+		return nil, err
+	}
+
+	return mSubscription, nil
+}
+
+func (s *SubscriptionService) Delete(ctx context.Context, id string) error {
+	parsedID, err := uuid.Parse(id)
+	if err != nil {
+		return ErrInvalidSubID
+	}
+
+	err = s.repo.Delete(ctx, parsedID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrSubNotFound
+		}
+		return err
+	}
+
+	return nil
+}
+
+func validateInput(input *ValidationInput) (*ValidatedData, error) {
+
 	if input.ServiceName == "" {
 		return nil, ErrServiceNameRequired
 	}
@@ -185,39 +232,10 @@ func (s *SubscriptionService) Update(ctx context.Context, id string, input Updat
 		}
 	}
 
-	mSubscription := &model.Subscription{
-		ID:          parsedID,
-		ServiceName: input.ServiceName,
-		Price:       input.Price,
-		UserID:      userID,
-		StartDate:   startDate,
-		EndDate:     endDate,
+	result := &ValidatedData{
+		UserID:    userID,
+		StartDate: startDate,
+		EndDate:   endDate,
 	}
-
-	err = s.repo.Update(ctx, mSubscription)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrSubNotFound
-		}
-		return nil, err
-	}
-
-	return mSubscription, nil
-}
-
-func (s *SubscriptionService) Delete(ctx context.Context, id string) error {
-	parsedID, err := uuid.Parse(id)
-	if err != nil {
-		return ErrInvalidSubID
-	}
-
-	err = s.repo.Delete(ctx, parsedID)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return ErrSubNotFound
-		}
-		return err
-	}
-
-	return nil
+	return result, nil
 }

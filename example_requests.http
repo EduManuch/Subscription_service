@@ -32,7 +32,7 @@ GET http://localhost:8080/subscriptions?user_id=60601fee-2bf1-4721-ae6f-7636e79a
 ### curl "http://localhost:8080/subscriptions?service_name=Yandex Plus"
 GET http://localhost:8080/subscriptions?service_name=Yandex Plus
 
-### curl -X PUT http://localhost:8080/subscriptions/5383e26e-6515-42be-b6df-519b0c6741f7 \
+### curl -X PUT http://localhost:8080/subscriptions/b7402536-5a55-4ee8-a0a6-e42de4d76f54 \
 #  -H "Content-Type: application/json" \
 #  -d '{
 #    "service_name": "Netflix",
@@ -41,7 +41,7 @@ GET http://localhost:8080/subscriptions?service_name=Yandex Plus
 #   "start_date": "07-2025",
 #    "end_date": "09-2025"
 #  }'
-PUT http://localhost:8080/subscriptions/5383e26e-6515-42be-b6df-519b0c6741f7
+PUT http://localhost:8080/subscriptions/b7402536-5a55-4ee8-a0a6-e42de4d76f54
 Content-Type: application/json
 
 {
