@@ -119,7 +119,7 @@ func (s *SubscriptionService) List(ctx context.Context, input ListSubscriptionsI
 	}
 
 	var userID *uuid.UUID
-	for input.UserID != nil && *input.UserID == "" {
+	if input.UserID != nil && *input.UserID != "" {
 		parsed, err := uuid.Parse(*input.UserID)
 		if err != nil {
 			return nil, err
@@ -223,7 +223,7 @@ func (s *SubscriptionService) CalculateTotalPrice(ctx context.Context, input Cal
 	}
 
 	var userID *uuid.UUID
-	for input.UserID != nil && *input.UserID == "" {
+	if input.UserID != nil && *input.UserID != "" {
 		parsed, err := uuid.Parse(*input.UserID)
 		if err != nil {
 			return 0, ErrInvalidUserID

@@ -23,7 +23,7 @@ func NewSubscriptionHandler(service *serv.SubscriptionService) *SubscriptionHand
 // CRLResponse - Create, Read, List response
 // Ответ для Create, GetByID и List
 type CRLResponse struct {
-	ID          uuid.UUID
+	ID          uuid.UUID `json:"id"`
 	ServiceName string    `json:"service_name"`
 	Price       int       `json:"price"`
 	UserID      uuid.UUID `json:"user_id"`
@@ -130,23 +130,10 @@ func (h *SubscriptionHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := make([]map[string]any, 0, len(subscriptions))
+	response := make([]CRLResponse, 0, len(subscriptions))
 	for _, s := range subscriptions {
-		sub := map[string]any{
-			"id":           s.ID,
-			"service_name": s.ServiceName,
-			"price":        s.Price,
-			"user_id":      s.UserID,
-			"start_date":   s.StartDate.Format("01-2006"),
-			"created_at":   s.CreatedAt,
-			"updated_at":   s.UpdatedAt,
-		}
-
-		if s.EndDate != nil {
-			sub["end_date"] = s.EndDate.Format("01-2006")
-		}
-
-		response = append(response, sub)
+		resp := createResponse(&s)
+		response = append(response, *resp)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
