@@ -19,8 +19,8 @@ Content-Type: application/json
 }
 
 ### GetByID
-# curl http://localhost:8080/subscriptions/5383e26e-6515-42be-b6df-519b0c6741f7
-GET http://localhost:8080/subscriptions/5383e26e-6515-42be-b6df-519b0c6741f7
+# curl http://localhost:8080/subscriptions/2d33c59e-f4b9-414b-a0c3-36b48772bb69
+GET http://localhost:8080/subscriptions/2d33c59e-f4b9-414b-a0c3-36b48772bb69
 
 ### LIST
 # curl "http://localhost:8080/subscriptions"
@@ -39,7 +39,7 @@ GET http://localhost:8080/subscriptions?user_id=60601fee-2bf1-4721-ae6f-7636e79a
 GET http://localhost:8080/subscriptions?service_name=Yandex Plus
 
 ### UPDATE
-# curl -X PUT http://localhost:8080/subscriptions/b7402536-5a55-4ee8-a0a6-e42de4d76f54 \
+# curl -X PUT http://localhost:8080/subscriptions/2d33c59e-f4b9-414b-a0c3-36b48772bb69 \
 #  -H "Content-Type: application/json" \
 #  -d '{
 #    "service_name": "Netflix",
@@ -48,7 +48,7 @@ GET http://localhost:8080/subscriptions?service_name=Yandex Plus
 #   "start_date": "07-2025",
 #    "end_date": "09-2025"
 #  }'
-PUT http://localhost:8080/subscriptions/b7402536-5a55-4ee8-a0a6-e42de4d76f54
+PUT http://localhost:8080/subscriptions/2d33c59e-f4b9-414b-a0c3-36b48772bb69
 Content-Type: application/json
 
 {
@@ -60,8 +60,8 @@ Content-Type: application/json
 }
 
 ### DELETE
-# curl -X DELETE http://localhost:8080/subscriptions/7bd8b793-103c-4370-95db-4fbfdfaf9c50 -i
-DELETE http://localhost:8080/subscriptions/7bd8b793-103c-4370-95db-4fbfdfaf9c50
+# curl -X DELETE http://localhost:8080/subscriptions/fe04b550-07fc-4d01-82fc-07ed878675a8 -i
+DELETE http://localhost:8080/subscriptions/fe04b550-07fc-4d01-82fc-07ed878675a8
 
 ### CalculateTotalPrice only by dates
 # curl "http://localhost:8080/subscriptions/total?from=01-2025&to=12-2025"
