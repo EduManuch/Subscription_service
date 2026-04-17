@@ -20,7 +20,7 @@ Content-Type: application/json
 
 ### GetByID
 # curl http://localhost:8080/subscriptions/2d33c59e-f4b9-414b-a0c3-36b48772bb69
-GET http://localhost:8080/subscriptions/2d33c59e-f4b9-414b-a0c3-36b48772bb69
+GET http://localhost:8080/subscriptions/4faadcde-c9b5-47eb-92ef-3ac55175e426
 
 ### LIST
 # curl "http://localhost:8080/subscriptions"
