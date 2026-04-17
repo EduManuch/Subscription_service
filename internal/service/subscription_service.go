@@ -23,10 +23,20 @@ var (
 )
 
 type SubscriptionService struct {
-	repo *repository.SubscriptionRepository
+	repo subscriptionRepository
 }
 
-func NewSubscriptionService(repo *repository.SubscriptionRepository) *SubscriptionService {
+// Интерфейс для использования в тестах
+type subscriptionRepository interface {
+	Create(ctx context.Context, s *model.Subscription) error
+	GetByID(ctx context.Context, id uuid.UUID) (*model.Subscription, error)
+	List(ctx context.Context, f repository.ListSubscriptionsFilter) ([]model.Subscription, error)
+	Update(ctx context.Context, s *model.Subscription) error
+	Delete(ctx context.Context, id uuid.UUID) error
+	CalculateTotalPrice(ctx context.Context, f repository.CalculatePriceFilter) (int, error)
+}
+
+func NewSubscriptionService(repo subscriptionRepository) *SubscriptionService {
 	return &SubscriptionService{repo: repo}
 }
 

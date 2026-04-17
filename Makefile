@@ -62,3 +62,7 @@ fmt: ## форматировать код
 
 run: ## запустить локально без Docker
 	go run cmd/app/main.go
+
+test: ## запустить тесты
+	go test -v ./internal/service/
+	go test -v ./internal/handlers/
